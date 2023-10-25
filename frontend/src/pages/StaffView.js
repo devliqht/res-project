@@ -5,6 +5,19 @@ import { useLogsContext } from '../hooks/useLogsContext'
 import { useEffect, useState } from 'react'
 
 const Experiments = ({experiments}) => {
+
+    const { dispatchExperiments } = useExperimentsContext()
+    const experimentDelete = async () => {
+        const response = await fetch('/api/experiments/' + experiments._id, {
+          method: 'DELETE'
+        })
+        const json = await response.json()
+    
+        if (response.ok) {
+          dispatchExperiments({type: 'DELETE_EXPERIMENT', payload: json})
+        }
+    }
+
     return (
         <div className="experimentList">
             <div className="experiment">
@@ -13,6 +26,10 @@ const Experiments = ({experiments}) => {
 
                 <h3>Experiment Number: </h3>
                 <p>{experiments.experimentNo}</p>
+
+                <h3>Experiment ID: </h3>
+                <p>{experiments._id}</p>
+                <button className="material-symbols-outlined" onClick={() => { experimentDelete(experiments._id) }}>delete</button>
             </div>
         </div>
     )
@@ -83,11 +100,28 @@ const StaffView = () => {
     }, [dispatchLogs])
 
     const [experimentName, setExperimentName] = useState('');
-    const [experimentID, setExperimentID] = useState(0);
-    const SaveData = async (event) => { 
-        event.preventDefault();
-    }
+    const [experimentNo, setExperimentNo] = useState(0);
 
+    const SaveData = async (event) => {
+        event.preventDefault();
+        let apparatuses = [{ "name": "apparatus 1" }, { "name": "apparatus 2"}]
+        const experimentData = { experimentName, experimentNo, apparatuses }
+
+        const response = await fetch('/api/experiments', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(experimentData)
+        })
+        const json = await response.json()
+        if (!response.ok) {
+            console.log(json.error)
+        }
+        if (response.ok) {
+          setExperimentName('')
+          setExperimentNo('')  
+          dispatchExperiments({type: 'CREATE_EXPERIMENT', payload: json})
+        }
+      }
     return (
         <div className="home">
             <div className="staffView">
@@ -117,9 +151,9 @@ const StaffView = () => {
                             type="number" 
                             placeholder="1" 
                             required
-                            value={experimentID} 
+                            value={experimentNo} 
                             
-                            onChange={(Event) => setExperimentID(Event.target.value)}/>
+                            onChange={(Event) => setExperimentNo(Event.target.value)}/>
                         </div>
                         <button id="submit-button" className="button-3" role="button" type="submit">Submit</button>
                     </form>
